@@ -3,6 +3,8 @@ package com.balcony.temp
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +17,13 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val autoRefresh = object : Runnable {
+        override fun run() {
+            loadData(fromSwipe = false)
+            refreshHandler.postDelayed(this, REFRESH_INTERVAL_MS)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,13 +33,19 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener { loadData(fromSwipe = true) }
         binding.refreshButton.setOnClickListener { loadData(fromSwipe = false) }
         binding.addWidgetButton.setOnClickListener { requestPinWidget() }
-
-        loadData(fromSwipe = false)
     }
 
     override fun onResume() {
         super.onResume()
+        loadData(fromSwipe = false)
         TempWidgetProvider.refreshAll(this)
+        refreshHandler.removeCallbacks(autoRefresh)
+        refreshHandler.postDelayed(autoRefresh, REFRESH_INTERVAL_MS)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        refreshHandler.removeCallbacks(autoRefresh)
     }
 
     private fun loadData(fromSwipe: Boolean) {
@@ -99,5 +114,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, R.string.widget_pin_unsupported, Toast.LENGTH_LONG).show()
         }
+    }
+
+    companion object {
+        private const val REFRESH_INTERVAL_MS = 10 * 60 * 1000L
     }
 }
