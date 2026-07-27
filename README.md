@@ -8,8 +8,10 @@ It mirrors the temperature buckets and artwork of the companion web dashboard:
 
 ## Download
 
-Grab the latest APK from the **[Releases page](https://github.com/mancio/balcony-temp/releases/latest)**
-and sideload it (enable *Install unknown apps* for your browser/file manager).
+**[⬇️ Download BalconyTemp.apk](https://github.com/mancio/balcony-temp/releases/download/v1.0/BalconyTemp.apk)**
+&nbsp;·&nbsp; or browse all [Releases](https://github.com/mancio/balcony-temp/releases/latest).
+
+Sideload it (enable *Install unknown apps* for your browser/file manager).
 
 <p align="center"><img src="docs/screenshot.png" width="320" alt="Balcony Temp app"/></p>
 
