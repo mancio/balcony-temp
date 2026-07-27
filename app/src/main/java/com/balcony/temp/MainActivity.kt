@@ -101,13 +101,21 @@ class MainActivity : AppCompatActivity() {
             TempRepository.formatTimestamp(data.timeUnix)
         )
 
-        val battery = TempRepository.displayBattery(data.voltage, data.timeUnix)
-        binding.batteryPercent.text = getString(R.string.battery_value, battery)
-        binding.batteryBar.progress = battery
-        binding.voltage.text = if (data.voltage.isNaN()) {
-            "--"
-        } else {
-            getString(R.string.voltage_value, data.voltage)
+        val stale = TempRepository.isStale(data.timeUnix)
+        binding.batteryRow.visibility = if (stale) View.GONE else View.VISIBLE
+        binding.batteryBar.visibility = if (stale) View.GONE else View.VISIBLE
+        binding.voltage.visibility = if (stale) View.GONE else View.VISIBLE
+        binding.batteryStale.visibility = if (stale) View.VISIBLE else View.GONE
+
+        if (!stale) {
+            val battery = TempRepository.batteryPercentage(data.voltage)
+            binding.batteryPercent.text = getString(R.string.battery_value, battery)
+            binding.batteryBar.progress = battery
+            binding.voltage.text = if (data.voltage.isNaN()) {
+                "--"
+            } else {
+                getString(R.string.voltage_value, data.voltage)
+            }
         }
     }
 

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,10 +84,16 @@ class TempWidgetProvider : AppWidgetProvider() {
                 R.id.widget_status,
                 "Updated ${TempRepository.timeAgo(data.timeUnix)}"
             )
-            views.setTextViewText(
-                R.id.widget_battery,
-                "🔋 ${TempRepository.displayBattery(data.voltage, data.timeUnix)}%"
-            )
+            if (TempRepository.isStale(data.timeUnix)) {
+                views.setTextViewText(R.id.widget_battery, "⚠ No update >1d")
+                views.setTextColor(R.id.widget_battery, ContextCompat.getColor(context, R.color.error))
+            } else {
+                views.setTextViewText(
+                    R.id.widget_battery,
+                    "🔋 ${TempRepository.batteryPercentage(data.voltage)}%"
+                )
+                views.setTextColor(R.id.widget_battery, ContextCompat.getColor(context, R.color.text_secondary))
+            }
         } else {
             views.setImageViewResource(R.id.widget_icon, R.drawable.ic_temp_mild)
             views.setTextViewText(R.id.widget_temperature, "--")

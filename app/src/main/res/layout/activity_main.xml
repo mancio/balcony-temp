@@ -119,6 +119,7 @@
                     android:paddingVertical="20dp">
 
                     <LinearLayout
+                        android:id="@+id/batteryRow"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
@@ -159,6 +160,16 @@
                         android:text="--"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/batteryStale"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/battery_stale"
+                        android:textColor="@color/error"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
 
