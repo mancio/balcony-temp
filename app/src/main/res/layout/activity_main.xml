@@ -191,15 +191,6 @@
                 android:layout_marginTop="8dp"
                 android:text="@string/add_widget"
                 android:textColor="@color/text_primary" />
-
-            <Button
-                android:id="@+id/settingsButton"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/settings"
-                android:textColor="@color/text_primary" />
         </LinearLayout>
     </ScrollView>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

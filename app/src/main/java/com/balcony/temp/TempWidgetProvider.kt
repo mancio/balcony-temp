@@ -51,16 +51,11 @@ class TempWidgetProvider : AppWidgetProvider() {
         )
         if (ids.isEmpty()) return
 
-        val key = Prefs.getKey(context)
-        val views = if (key == null) {
-            buildViews(context, status = "Open app to set key", openApp = true)
-        } else {
-            runCatching { TempRepository.fetch(key) }
-                .fold(
-                    onSuccess = { data -> buildViews(context, data = data) },
-                    onFailure = { buildViews(context, status = "Tap to retry") }
-                )
-        }
+        val views = runCatching { TempRepository.fetch() }
+            .fold(
+                onSuccess = { data -> buildViews(context, data = data) },
+                onFailure = { buildViews(context, status = "Tap to retry") }
+            )
         for (id in ids) {
             manager.updateAppWidget(id, views)
         }
@@ -69,8 +64,7 @@ class TempWidgetProvider : AppWidgetProvider() {
     private fun buildViews(
         context: Context,
         data: ThermometerData? = null,
-        status: String? = null,
-        openApp: Boolean = false
+        status: String? = null
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_temp)
 
@@ -101,17 +95,8 @@ class TempWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_battery, "")
         }
 
-        val clickIntent = if (openApp) openAppPendingIntent(context) else refreshPendingIntent(context)
-        views.setOnClickPendingIntent(R.id.widget_root, clickIntent)
+        views.setOnClickPendingIntent(R.id.widget_root, refreshPendingIntent(context))
         return views
-    }
-
-    private fun openAppPendingIntent(context: Context): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getActivity(context, 1, intent, flags)
     }
 
     private fun refreshPendingIntent(context: Context): PendingIntent {

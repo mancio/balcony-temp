@@ -20,29 +20,23 @@ data class ThermometerData(
 )
 
 /**
- * Reads the thermometer values from the user's Firebase Realtime Database REST endpoint.
- * The database key (its base URL) is supplied by the user, not bundled with the app.
+ * Reads the thermometer values from the public Firebase Realtime Database REST endpoint.
+ * The database allows public reads, so no key or sign-in is required.
  */
 object TempRepository {
 
-    // Data node inside the database (Casina/temp, Casina/time, Casina/voltage).
-    private const val NODE = "Casina"
+    // Public endpoint for the balcony thermometer (Casina/temp, Casina/time, Casina/voltage).
+    private const val DB_URL =
+        "https://manciotech-244ac-default-rtdb.europe-west1.firebasedatabase.app/Casina.json"
 
     private const val MIN_VOLTAGE = 4.80
     private const val MAX_VOLTAGE = 5.20
     private const val ONE_DAY_SECONDS = 24L * 60 * 60
 
-    /** Builds the REST endpoint from the database key (a base URL or a full ".json" URL). */
-    private fun endpointFor(dbKey: String): String {
-        val trimmed = dbKey.trim().trimEnd('/')
-        return if (trimmed.endsWith(".json")) trimmed else "$trimmed/$NODE.json"
-    }
-
     /** Performs a blocking HTTP GET. Call from a background thread/coroutine. */
     @Throws(Exception::class)
-    fun fetch(dbKey: String): ThermometerData {
-        require(dbKey.isNotBlank()) { "Missing database key" }
-        val connection = (URL(endpointFor(dbKey)).openConnection() as HttpURLConnection).apply {
+    fun fetch(): ThermometerData {
+        val connection = (URL(DB_URL).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 15_000
             readTimeout = 15_000
@@ -77,10 +71,6 @@ object TempRepository {
         if (timeUnix <= 0) return true
         return (nowUnix - timeUnix) > ONE_DAY_SECONDS
     }
-
-    /** Battery level, forced to 0 when the reading is older than a day. */
-    fun displayBattery(voltage: Double, timeUnix: Long): Int =
-        if (isStale(timeUnix)) 0 else batteryPercentage(voltage)
 
     /**
      * Drawable icon chosen from the temperature, using the same buckets and artwork

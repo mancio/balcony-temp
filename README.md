@@ -15,30 +15,17 @@ Sideload it (enable *Install unknown apps* for your browser/file manager).
 
 <p align="center"><img src="docs/screenshot.png" width="320" alt="Balcony Temp app"/></p>
 
-## First run — enter your key
+## How it works
 
-The app ships **without any database key**, so nothing private is baked into it.
-
-On first launch it opens **Settings** and asks for your **Firebase Realtime Database URL**,
-for example:
-
-```
-https://your-project-default-rtdb.europe-west1.firebasedatabase.app
-```
-
-- Tap **Test connection** to verify it reads your data.
-- Tap **Save** to store it (kept only on your device).
-- You can change it any time from **Settings**.
-
-The database is read over the public REST endpoint (`<your-url>/Casina.json`), so no
-sign‑in is required as long as your database allows public reads.
+It reads a fixed **public** Firebase Realtime Database endpoint over REST
+(`.../Casina.json`) — no account, login, or configuration needed. Just install and open.
 
 ## Features
 
 - Live temperature with a weather icon chosen from the reading.
 - "Last update … ago" plus the absolute time (Warsaw time).
 - Battery % derived from the sensor voltage.
-- **If the last update is older than 1 day, the battery is shown as 0%.**
+- **If the last update is older than 1 day, the voltage is hidden and a red “no update” warning replaces the battery.**
 - Home‑screen widget that refreshes on tap and every 30 minutes.
 - Pull to refresh; "Add widget to home screen" button.
 
@@ -50,10 +37,6 @@ Requirements: JDK 17 and the Android SDK (API 34).
 ./gradlew assembleDebug
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
-
-No secrets are needed to build. For local emulator testing you may keep your key in a
-git‑ignored `secrets.properties` (`TEMP_DB_KEY=...`) and seed it onto the device — it is
-never committed and never included in the APK.
 
 ## Tech
 

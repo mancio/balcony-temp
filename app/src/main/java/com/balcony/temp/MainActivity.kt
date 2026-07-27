@@ -2,7 +2,6 @@ package com.balcony.temp
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -16,7 +15,6 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private var promptedForKey = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,42 +24,16 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener { loadData(fromSwipe = true) }
         binding.refreshButton.setOnClickListener { loadData(fromSwipe = false) }
         binding.addWidgetButton.setOnClickListener { requestPinWidget() }
-        binding.settingsButton.setOnClickListener { openSettings() }
+
+        loadData(fromSwipe = false)
     }
 
     override fun onResume() {
         super.onResume()
-        if (!Prefs.hasKey(this)) {
-            // First run: send the user to the setup screen (only once per launch).
-            if (!promptedForKey) {
-                promptedForKey = true
-                openSettings()
-            }
-            showNoKey()
-            return
-        }
-        loadData(fromSwipe = false)
         TempWidgetProvider.refreshAll(this)
     }
 
-    private fun openSettings() {
-        startActivity(Intent(this, SettingsActivity::class.java))
-    }
-
-    private fun showNoKey() {
-        binding.progress.visibility = View.GONE
-        binding.content.visibility = View.GONE
-        binding.errorText.visibility = View.VISIBLE
-        binding.errorText.text = getString(R.string.no_key)
-    }
-
     private fun loadData(fromSwipe: Boolean) {
-        val key = Prefs.getKey(this)
-        if (key == null) {
-            binding.swipeRefresh.isRefreshing = false
-            showNoKey()
-            return
-        }
         if (!fromSwipe) {
             binding.progress.visibility = View.VISIBLE
         }
@@ -69,7 +41,7 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val result = runCatching {
-                withContext(Dispatchers.IO) { TempRepository.fetch(key) }
+                withContext(Dispatchers.IO) { TempRepository.fetch() }
             }
             binding.progress.visibility = View.GONE
             binding.swipeRefresh.isRefreshing = false
