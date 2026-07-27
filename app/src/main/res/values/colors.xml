@@ -1,0 +1,11 @@
+<resources>
+    <color name="bg_top">#0F2027</color>
+    <color name="bg_mid">#203A43</color>
+    <color name="bg_bottom">#2C5364</color>
+    <color name="card">#1B2A33</color>
+    <color name="accent">#4FC3F7</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9FB3C8</color>
+    <color name="widget_bg">#1B2A33</color>
+    <color name="error">#EF5350</color>
+</resources>
