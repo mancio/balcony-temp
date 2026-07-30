@@ -16,3 +16,4 @@ secrets.properties
 *.keystore
 *.jks
 keystore.properties
+*.apk

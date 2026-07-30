@@ -8,10 +8,14 @@ It mirrors the temperature buckets and artwork of the companion web dashboard:
 
 ## Download
 
-**[⬇️ Download BalconyTemp.apk](https://github.com/mancio/balcony-temp/releases/download/v1.0/BalconyTemp.apk)**
+**[⬇️ Download BalconyTemp.apk](https://github.com/mancio/balcony-temp/releases/download/v1.1/BalconyTemp.apk)**
 &nbsp;·&nbsp; or browse all [Releases](https://github.com/mancio/balcony-temp/releases/latest).
 
 Sideload it (enable *Install unknown apps* for your browser/file manager).
+
+> **Upgrading from v1.0?** v1.1 is the first build signed with a real release key
+> (v1.0 was debug‑signed), so Android will refuse to install it over the old version.
+> Uninstall v1.0 first. Future updates will install normally.
 
 <p align="center"><img src="docs/screenshot.png" width="320" alt="Balcony Temp app"/></p>
 
