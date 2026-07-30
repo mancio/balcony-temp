@@ -12,6 +12,10 @@ import kotlin.math.roundToInt
 /**
  * Snapshot of the balcony thermometer as stored in the Firebase Realtime Database
  * at the "Casina" node: { "temp": Double, "time": Long (unix seconds), "voltage": Double }.
+ *
+ * The values are written by the CasinaWifiTemp firmware (NodeMCU v2 / ESP8266) which wakes
+ * from deep sleep once per hour, reads a DS18B20 plus the battery voltage divider, and then
+ * pushes `temp`, `voltage` and `time` as three separate RTDB writes.
  */
 data class ThermometerData(
     val temperature: Double,
@@ -26,17 +30,30 @@ data class ThermometerData(
 object TempRepository {
 
     // Public endpoint for the balcony thermometer (Casina/temp, Casina/time, Casina/voltage).
-    private const val DB_URL =
+    const val DB_URL =
         "https://manciotech-244ac-default-rtdb.europe-west1.firebasedatabase.app/Casina.json"
 
     private const val MIN_VOLTAGE = 4.80
     private const val MAX_VOLTAGE = 5.20
-    private const val ONE_DAY_SECONDS = 24L * 60 * 60
+
+    /**
+     * The firmware deep-sleeps for exactly one hour between uploads, so a healthy device
+     * refreshes the node every ~60 minutes. Five missed cycles means something is wrong
+     * (flat battery, WiFi down, or a frozen sensor), so that is when we raise the alarm.
+     */
+    const val STALE_AFTER_SECONDS = 5L * 60 * 60
+
+    /** At or below this battery percentage the reading is drawn in red. */
+    const val LOW_BATTERY_PERCENT = 20
+
+    /** Endpoint actually used by [fetch]. Overridden by tests to point at a local server. */
+    @Volatile
+    internal var endpoint: String = DB_URL
 
     /** Performs a blocking HTTP GET. Call from a background thread/coroutine. */
     @Throws(Exception::class)
-    fun fetch(): ThermometerData {
-        val connection = (URL(DB_URL).openConnection() as HttpURLConnection).apply {
+    fun fetch(urlString: String = endpoint): ThermometerData {
+        val connection = (URL(urlString).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 15_000
             readTimeout = 15_000
@@ -48,15 +65,31 @@ object TempRepository {
                 throw RuntimeException("Server returned HTTP $code")
             }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(body)
-            return ThermometerData(
-                temperature = json.optDouble("temp", Double.NaN),
-                timeUnix = json.optLong("time", 0L),
-                voltage = json.optDouble("voltage", Double.NaN)
-            )
+            return parse(body)
         } finally {
             connection.disconnect()
         }
+    }
+
+    /**
+     * Turns the raw RTDB JSON document into a [ThermometerData].
+     *
+     * The firmware writes the three fields independently, so any of them can be missing when
+     * a wake cycle dies half way through: a missing number becomes NaN / 0 instead of throwing.
+     * A literal `null` body means the node does not exist at all.
+     */
+    @Throws(Exception::class)
+    fun parse(body: String): ThermometerData {
+        val trimmed = body.trim()
+        if (trimmed.isEmpty() || trimmed == "null") {
+            throw RuntimeException("Thermometer node is empty")
+        }
+        val json = JSONObject(trimmed)
+        return ThermometerData(
+            temperature = json.optDouble("temp", Double.NaN),
+            timeUnix = json.optLong("time", 0L),
+            voltage = json.optDouble("voltage", Double.NaN)
+        )
     }
 
     /** Battery level 0-100 derived from the voltage, matching the web dashboard formula. */
@@ -66,10 +99,19 @@ object TempRepository {
         return (((clamped - MIN_VOLTAGE) / (MAX_VOLTAGE - MIN_VOLTAGE)) * 100).roundToInt()
     }
 
-    /** True when the last thermometer update is older than one day (data considered stale). */
+    /**
+     * True when the battery is low enough to warn about. An unknown (NaN) voltage is *not*
+     * reported as low, otherwise a partial Firebase write would look like a dead battery.
+     */
+    fun isLowBattery(voltage: Double): Boolean {
+        if (voltage.isNaN()) return false
+        return batteryPercentage(voltage) <= LOW_BATTERY_PERCENT
+    }
+
+    /** True when the thermometer has missed several hourly uploads (data considered stale). */
     fun isStale(timeUnix: Long, nowUnix: Long = System.currentTimeMillis() / 1000): Boolean {
         if (timeUnix <= 0) return true
-        return (nowUnix - timeUnix) > ONE_DAY_SECONDS
+        return (nowUnix - timeUnix) > STALE_AFTER_SECONDS
     }
 
     /**

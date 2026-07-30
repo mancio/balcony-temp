@@ -2,12 +2,14 @@ package com.balcony.temp
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.balcony.temp.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +35,10 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener { loadData(fromSwipe = true) }
         binding.refreshButton.setOnClickListener { loadData(fromSwipe = false) }
         binding.addWidgetButton.setOnClickListener { requestPinWidget() }
+
+        // Re-arm background refresh: a force-stop cancels WorkManager work, and opening the
+        // app is the only reliable moment to bring it back.
+        TempRefreshWorker.schedule(this)
     }
 
     override fun onResume() {
@@ -74,6 +80,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun render(data: ThermometerData) {
         binding.content.visibility = View.VISIBLE
+        TempCache.save(this, data)
 
         binding.icon.setImageResource(TempRepository.temperatureIconRes(data.temperature))
         binding.temperature.text = if (data.temperature.isNaN()) {
@@ -82,28 +89,40 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.temperature_value, data.temperature)
         }
 
+        val stale = TempRepository.isStale(data.timeUnix)
         binding.updatedAgo.text = TempRepository.timeAgo(data.timeUnix)
+        binding.updatedAgo.setTextColor(
+            ContextCompat.getColor(this, if (stale) R.color.error else R.color.accent)
+        )
         binding.updatedAbsolute.text = getString(
             R.string.last_update_absolute,
             TempRepository.formatTimestamp(data.timeUnix)
         )
-
-        val stale = TempRepository.isStale(data.timeUnix)
-        binding.batteryRow.visibility = if (stale) View.GONE else View.VISIBLE
-        binding.batteryBar.visibility = if (stale) View.GONE else View.VISIBLE
-        binding.voltage.visibility = if (stale) View.GONE else View.VISIBLE
         binding.batteryStale.visibility = if (stale) View.VISIBLE else View.GONE
 
-        if (!stale) {
-            val battery = TempRepository.batteryPercentage(data.voltage)
-            binding.batteryPercent.text = getString(R.string.battery_value, battery)
-            binding.batteryBar.progress = battery
-            binding.voltage.text = if (data.voltage.isNaN()) {
-                "--"
-            } else {
-                getString(R.string.voltage_value, data.voltage)
-            }
+        // The battery block stays visible even when the reading is stale: a flat battery is
+        // the most likely reason the thermometer stopped reporting in the first place.
+        val battery = TempRepository.batteryPercentage(data.voltage)
+        val lowBattery = TempRepository.isLowBattery(data.voltage)
+        val batteryColor =
+            ContextCompat.getColor(this, if (lowBattery) R.color.error else R.color.text_primary)
+
+        binding.batteryPercent.text = if (data.voltage.isNaN()) {
+            "--"
+        } else {
+            getString(R.string.battery_value, battery)
         }
+        binding.batteryPercent.setTextColor(batteryColor)
+        binding.batteryBar.progress = battery
+        binding.batteryBar.progressTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (lowBattery) R.color.error else R.color.accent)
+        )
+        binding.voltage.text = if (data.voltage.isNaN()) {
+            "--"
+        } else {
+            getString(R.string.voltage_value, data.voltage)
+        }
+        binding.batteryLow.visibility = if (lowBattery) View.VISIBLE else View.GONE
     }
 
     private fun requestPinWidget() {

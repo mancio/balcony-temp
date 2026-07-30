@@ -24,10 +24,17 @@ It reads a fixed **public** Firebase Realtime Database endpoint over REST
 
 - Live temperature with a weather icon chosen from the reading.
 - "Last update … ago" plus the absolute time (Warsaw time).
-- Battery % derived from the sensor voltage.
-- **If the last update is older than 1 day, the voltage is hidden and a red “no update” warning replaces the battery.**
-- Home‑screen widget that refreshes on tap and every 30 minutes.
+- Battery % derived from the sensor voltage, shown **in red when the battery is low**.
+- The sensor wakes from deep sleep once an hour, so **if the last update is older than 5 hours a red "no update" warning appears** — the battery stays visible, since a flat battery is usually the reason it stopped reporting.
+- Home‑screen widget that refreshes on tap and every 15 minutes in the background (WorkManager), and keeps showing the last known reading across reboots instead of blanking out.
 - Pull to refresh; "Add widget to home screen" button.
+
+## Tests
+
+```bash
+./gradlew testDebugUnitTest          # JVM + Robolectric (no device needed)
+./gradlew connectedDebugAndroidTest  # on a device/emulator
+```
 
 ## Build from source
 

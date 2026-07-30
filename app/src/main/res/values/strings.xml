@@ -13,5 +13,9 @@
     <string name="widget_pin_unsupported">Your launcher can\'t pin widgets. Long-press the home screen and pick \"Balcony Temp\" from the widget list.</string>
     <string name="battery_label">Battery</string>
     <string name="last_update_label">Last update</string>
-    <string name="battery_stale">⚠ No update for over a day</string>
+    <string name="battery_stale">⚠ No update for over 5 hours</string>
+    <string name="battery_low">⚠ Low battery — replace it soon</string>
+    <string name="widget_status_stale">⚠ No update &gt;5h</string>
+    <string name="widget_status_updated">Updated %1$s</string>
+    <string name="widget_battery_value">🔋 %1$d%%</string>
 </resources>
